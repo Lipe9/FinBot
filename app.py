@@ -96,25 +96,23 @@ if prompt := st.chat_input("Pergunte sobre saldo, rendimento ou dicas financeira
                             f"Lucro estimado: **R$ {v_lucro:,.2f}**")
             else:
                 resposta = "Para calcular, informe o valor e o tempo. Ex: 'Quanto rende 1000 em 12 meses?'"
-    # 2. IA Generativa com Memória de Contexto
+# 2. IA Generativa
         else:
-            with st.spinner("Analisando com IA..."):
+            with st.spinner("Consultando inteligência financeira..."):
                 try:
-                    instrucoes_ia = (
-                        f"Você é o FinnBot. Saldo conta: R$ {st.session_state.saldo_conta:.2f}. "
-                        f"No cofrinho: R$ {st.session_state.saldo_cofrinho:.2f}."
+                    # System Prompt direto
+                    prompt_completo = (
+                        f"Você é o FinnBot. Saldo: R$ {st.session_state.saldo_conta}. "
+                        f"Pergunta: {prompt}"
                     )
                     
-                    history = []
-                    for m in st.session_state.messages[-5:]:
-                        # Corrigindo: Gemini exige 'user' e 'model'
-                        role = "user" if m["role"] == "user" else "model"
-                        history.append({"role": role, "parts": [m["content"]]})
-                    
-                    chat = model.start_chat(history=history[:-1])
-                    response = chat.send_message(f"{instrucoes_ia}\n\nPergunta: {prompt}")
+                    # Chamada direta (mais segura contra erros 404 de chat history)
+                    response = model.generate_content(prompt_completo)
                     resposta = response.text
+                    
                 except Exception as e:
+                    st.error(f"Erro real da API: {e}")
+                    resposta = "Tive um problema com o modelo. Tente novamente em 1 minuto."
                     # ISSO VAI MOSTRAR O ERRO REAL NO SITE
                     st.error(f"Erro na API: {e}")
                     resposta = "Não consegui falar com meu cérebro de IA agora."
@@ -134,5 +132,6 @@ if prompt := st.chat_input("Pergunte sobre saldo, rendimento ou dicas financeira
 
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
+
 
 
