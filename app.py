@@ -15,17 +15,15 @@ def get_model():
         st.error("❌ Erro: Chave de API não encontrada nos Secrets.")
         st.stop()
     
-    # Modelos disponíveis na sua conta (conforme lista anterior)
     modelos = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
     for nome in modelos:
         try:
             m = genai.GenerativeModel(nome)
-            # Teste simples de conexão
             return m, nome
         except: continue
     st.stop()
 
-# --- INICIALIZAÇÃO DE ESTADO (Session State) ---
+# --- INICIALIZAÇÃO DE ESTADO ---
 if 'saldo_conta' not in st.session_state: st.session_state.saldo_conta = 0.0
 if 'saldo_cofrinho' not in st.session_state: st.session_state.saldo_cofrinho = 0.0
 if 'extrato' not in st.session_state: st.session_state.extrato = []
@@ -47,11 +45,12 @@ with st.sidebar:
     with c1:
         if st.button("➕ Novo Chat", use_container_width=True):
             if len(st.session_state.messages) > 1:
+                resumo_texto = st.session_state.messages[1]['content'][:15]
                 st.session_state.historico_conversas.append({
-                    "label": f"🕒 {time.strftime('%H:%M')} - {st.session_state.messages[1]['content'][:15]}...",
+                    "label": f"🕒 {time.strftime('%H:%M')} - {resumo_texto}...",
                     "chats": list(st.session_state.messages)
                 })
-            st.session_state.messages = [{"role": "assistant", "content": "Novo chat iniciado! Como posso ajudar?"}]
+            st.session_state.messages = [{"role": "assistant", "content": "Novo chat iniciado!"}]
             st.rerun()
     with c2:
         if st.button("🗑️ Limpar Hist.", use_container_width=True):
@@ -65,23 +64,17 @@ with st.sidebar:
                 st.rerun()
 
     st.divider()
-
-    # --- FINANCEIRO ---
     st.metric("Conta Corrente", f"R$ {st.session_state.saldo_conta:,.2f}")
     st.metric("Cofrinho 🐷", f"R$ {st.session_state.saldo_cofrinho:,.2f}")
 
-    # Gráfico de Barras de Composição
     if st.session_state.saldo_conta > 0 or st.session_state.saldo_cofrinho > 0:
-        df_pizza = pd.DataFrame({
-            "Categoria": ["Disponível", "Guardado"],
+        df_grafico = pd.DataFrame({
+            "Local": ["Conta", "Cofrinho"],
             "Valor": [st.session_state.saldo_conta, st.session_state.saldo_cofrinho]
         })
-        st.write("📊 **Distribuição**")
-        st.bar_chart(df_pizza.set_index("Categoria"))
+        st.bar_chart(df_grafico.set_index("Local"))
 
     st.divider()
-    
-    # TRANSAÇÕES
     st.subheader("💳 Movimentar")
     valor_op = st.number_input("Valor (R$):", min_value=0.0, step=50.0)
     
@@ -96,23 +89,14 @@ with st.sidebar:
             if valor_op <= st.session_state.saldo_conta:
                 st.session_state.saldo_conta -= valor_op
                 st.session_state.saldo_cofrinho += valor_op
-                st.session_state.extrato.append(f"📥 -R$ {valor_op:.2f} (Para Cofrinho)")
+                st.session_state.extrato.append(f"📥 -R$ {valor_op:.2f} (Economia)")
                 st.rerun()
-            else: st.error("Saldo insuficiente")
     with col_t2:
         if st.button("📤 Resgatar", use_container_width=True):
             if valor_op <= st.session_state.saldo_cofrinho:
                 st.session_state.saldo_cofrinho -= valor_op
                 st.session_state.saldo_conta += valor_op
-                st.session_state.extrato.append(f"📤 +R$ {valor_op:.2f} (Do Cofrinho)")
+                st.session_state.extrato.append(f"📤 +R$ {valor_op:.2f} (Resgate)")
                 st.rerun()
-            else: st.error("Cofrinho vazio")
 
-# --- ÁREA PRINCIPAL ---
-col_main, col_info = st.columns([2, 1])
-
-with col_info:
-    # SEÇÃO DE METAS
-    st.subheader("🎯 Metas")
-    with st.expander("⚙️ Configurar Meta"):
-        st.session_state.nome_meta = st.text_input("
+# --- ÁREA PRINC
