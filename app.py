@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import google.generativeai as genai
+
 # --- CONFIGURAÇÃO DA API ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
@@ -13,7 +14,7 @@ except Exception as e:
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="FinnBot AI", page_icon="🏦")
 
-# --- INICIALIZAÇÃO DE DADOS ---
+# --- INICIALIZAÇÃO DE DADOS (Persistência) ---
 if 'saldo_conta' not in st.session_state:
     st.session_state.saldo_conta = 0.0
 if 'saldo_cofrinho' not in st.session_state:
@@ -60,45 +61,54 @@ with st.sidebar:
 # --- INTERFACE DE CHAT ---
 st.title("🤖 FinnBot: Seu Assistente")
 
+# Exibe o histórico de mensagens
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
+# Entrada de novas mensagens
 if prompt := st.chat_input("Pergunte qualquer coisa!"):
+    # Adiciona pergunta do usuário ao histórico
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
 
     with st.chat_message("assistant"):
         p_lower = prompt.lower()
         
-        # 1. Respostas Rápidas (Lógica Local)
+        # 1. Comandos Locais (Saldo)
         if "saldo" in p_lower:
-            resposta = f"Você tem R$ {st.session_state.saldo_conta:,.2f} na conta e R$ {st.session_state.saldo_cofrinho:,.2f} no cofrinho."
+            resposta = f"Seu saldo é R$ {st.session_state.saldo_conta:,.2f} e no cofrinho há R$ {st.session_state.saldo_cofrinho:,.2f}."
         
-        # 2. Inteligência Artificial (Gemini)
+        # 2. Inteligência Artificial com Memória
         else:
-            with st.spinner("Pensando..."):
+            with st.spinner("Processando..."):
                 try:
-                    # Instruções de personalidade e contexto de saldo
-                    contexto = (
-                        f"Você é o FinnBot, um assistente de finanças. "
+                    # Contexto do Sistema (Diz à IA quem ela é e quanto dinheiro o usuário tem)
+                    instrucoes = (
+                        f"Você é o FinnBot, um assistente financeiro. "
                         f"O usuário tem R$ {st.session_state.saldo_conta:.2f} na conta. "
-                        "Responda de forma curta e amigável."
+                        "Dê respostas curtas, amigáveis e em português."
                     )
                     
-                    # Formatação da memória (histórico)
-                    historico_ia = []
-                    for m in st.session_state.messages[-5:]:
-                        role_ia = "user" if m["role"] == "user" else "model"
-                        historico_ia.append({"role": role_ia, "parts": [m["content"]]})
+                    # Formata o histórico para o padrão que o Gemini aceita (user/model)
+                    historico_gemini = []
+                    for m in st.session_state.messages[-6:]: # Últimas 6 mensagens
+                        role = "user" if m["role"] == "user" else "model"
+                        historico_gemini.append({"role": role, "parts": [m["content"]]})
                     
-                    # Chamada do chat
-                    chat_session = model.start_chat(history=historico_ia[:-1])
-                    response = chat_session.send_message(f"{contexto}\n\nPergunta: {prompt}")
+                    # Inicia a sessão de chat
+                    chat = model.start_chat(history=historico_gemini[:-1])
+                    response = chat.send_message(f"{instrucoes}\n\nPergunta: {prompt}")
                     resposta = response.text
+                    
                 except Exception as e:
-                    # Exibe o erro técnico para você depurar, mas dá uma resposta amigável ao usuário
-                    st.error(f"Erro técnico: {e}")
-                    resposta = "Desculpe, tive um problema ao conectar com minha IA. Tente novamente!"
+                    # Caso a memória falhe (Erro 404), tenta uma resposta direta sem histórico
+                    try:
+                        res = model.generate_content(f"{instrucoes}\n\n{prompt}")
+                        resposta = res.text
+                    except Exception as e2:
+                        st.error(f"Erro na API: {e2}")
+                        resposta = "Infelizmente não consegui me conectar agora. Tente de novo em um minuto."
 
+        # Exibe a resposta e salva na memória
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
