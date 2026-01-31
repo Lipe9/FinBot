@@ -11,8 +11,6 @@ if 'saldo_cofrinho' not in st.session_state:
     st.session_state.saldo_cofrinho = 0.0
 if 'messages' not in st.session_state:
     st.session_state.messages = [{"role": "assistant", "content": "Olá! Sou seu FinBot. Vamos organizar suas economias hoje?"}]
-
-# --- BARRA LATERAL (UX: Resumo Financeiro) ---
 # --- BARRA LATERAL (UX: Resumo Financeiro) ---
 with st.sidebar:
     st.title("🏦 Meu Painel")
@@ -27,7 +25,7 @@ with st.sidebar:
     if st.button("Depositar na Conta"):
         st.session_state.saldo_conta += valor_input_conta
         st.success(f"R$ {valor_input_conta:,.2f} adicionados à conta!")
-        time.sleep(1) # Pausa curta para o usuário ler a mensagem
+        time.sleep(1)
         st.rerun()
 
     st.divider()
@@ -73,7 +71,7 @@ st.title("🤖 FinnBot: Assistente & Cofrinho")
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
-if prompt := st.chat_input("Ex: 'Quanto vai render 1000 em 12 meses?'"):
+if prompt := st.chat_input("Ex: 'Quanto vai render 1000 em 12 meses'"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
 
@@ -103,6 +101,7 @@ if prompt := st.chat_input("Ex: 'Quanto vai render 1000 em 12 meses?'"):
 
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
+
 
 
 
