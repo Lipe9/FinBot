@@ -4,8 +4,6 @@ import google.generativeai as genai
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="FinnBot AI", page_icon="🏦")
-
-# --- FUNÇÃO DE CONEXÃO AJUSTADA PARA SUA CONTA ---
 def get_model():
     try:
         api_key = st.secrets["GOOGLE_API_KEY"]
@@ -13,12 +11,10 @@ def get_model():
     except Exception:
         st.error("❌ Erro: Chave de API não encontrada nos Secrets.")
         st.stop()
-
-    # Atualizado com base na SUA lista de modelos disponíveis
     modelos_para_tentar = [
-        'gemini-2.5-flash',      # Prioridade 1: O mais novo e rápido
+        'gemini-2.5-flash',      # Prioridade 1
         'gemini-2.0-flash',      # Prioridade 2
-        'gemini-flash-latest',   # Prioridade 3: Genérico
+        'gemini-flash-latest',   # Prioridade 3
         'gemini-pro-latest'      # Prioridade 4
     ]
 
@@ -40,7 +36,7 @@ if 'saldo_cofrinho' not in st.session_state:
     st.session_state.saldo_cofrinho = 0.0
 if 'messages' not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Olá! Sou seu FinnBot (v2.5). Como posso ajudar suas finanças hoje?"}
+        {"role": "assistant", "content": "Olá! Sou seu FinnBot. Pergunte sobre suas finanças."}
     ]
 
 # --- TENTA CONECTAR ---
@@ -88,7 +84,7 @@ st.title("🤖 FinnBot: Assistente Financeiro")
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
-if prompt := st.chat_input("Ex: Como juntar 3 mil em 8 meses?"):
+if prompt := st.chat_input("Como posso ajudar suas finanças hoje?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
 
@@ -127,3 +123,4 @@ if prompt := st.chat_input("Ex: Como juntar 3 mil em 8 meses?"):
 
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
+
