@@ -75,7 +75,7 @@ class FinBot:
 
 # --- INTERFACE STREAMLIT ---
 
-st.set_page_config(page_title="NeoBank AI", page_icon="🏦")
+st.set_page_config(page_title="FinBot AI", page_icon="🏦")
 
 st.title("🏦 FinBot Assistant")
 st.caption("Sua inteligência financeira personalizada")
@@ -106,5 +106,6 @@ if prompt := st.chat_input("Ex: Qual meu saldo? ou Simular 5000 em 12 meses"):
             resposta = st.session_state.bot.processar_mensagem(prompt)
             st.write(resposta)
             st.session_state.messages.append({"role": "assistant", "content": resposta})
+
 
 
