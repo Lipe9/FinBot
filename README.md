@@ -1,11 +1,11 @@
-# 🏦 FinBot AI: Assistente Financeiro Inteligente
+# 🏦 FinnBot AI: Assistente Financeiro Inteligente
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Frontend-Streamlit-red)
 ![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-orange)
 ![Status](https://img.shields.io/badge/Status-Funcional-brightgreen)
 
-O **FinBot** é uma aplicação web de inteligência artificial voltada para o setor de finanças pessoais. Ele une a precisão de um painel de controle bancário com a flexibilidade da IA Generativa (Google Gemini) para oferecer uma experiência de autoatendimento fluida, educativa e segura.
+O **FinnBot** é uma aplicação web de inteligência artificial voltada para o setor de finanças pessoais. Ele une a precisão de um painel de controle bancário com a flexibilidade da IA Generativa (Google Gemini) para oferecer uma experiência de autoatendimento fluida, educativa e segura.
 
 ## 🎯 Objetivo
 Democratizar o entendimento financeiro. O FinBot preenche a lacuna entre planilhas complexas e o usuário final, utilizando uma interface visual intuitiva e um chat inteligente para fornecer suporte, cálculos de rendimento e educação financeira em tempo real.
@@ -36,7 +36,7 @@ Democratizar o entendimento financeiro. O FinBot preenche a lacuna entre planilh
 ## 📂 Estrutura do Projeto
 
 ```text
-📁 finbot/
+📁 finnbot/
 │
 ├── app.py                # Código principal (Frontend + Backend + Lógica IA)
 ├── requirements.txt      # Dependências (streamlit, google-generativeai)
