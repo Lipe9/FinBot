@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import google.generativeai as genai
+# --- CONFIGURAÇÃO DA API ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -10,7 +11,7 @@ except Exception as e:
     st.stop()
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="FinnBot AI", page_icon="🏦", layout="centered")
+st.set_page_config(page_title="FinnBot AI", page_icon="🏦")
 
 # --- INICIALIZAÇÃO DE DADOS ---
 if 'saldo_conta' not in st.session_state:
@@ -41,7 +42,7 @@ with st.sidebar:
     st.divider()
 
     st.subheader("Cofrinho")
-    valor_cofre = st.number_input("Valor da operação:", min_value=0.0, step=50.0, key="cof")
+    valor_cofre = st.number_input("Operação cofrinho:", min_value=0.0, step=50.0, key="cof")
     c1, c2 = st.columns(2)
     with c1:
         if st.button("Guardar 📥"):
@@ -55,12 +56,6 @@ with st.sidebar:
                 st.session_state.saldo_cofrinho -= valor_cofre
                 st.session_state.saldo_conta += valor_cofre
                 st.rerun()
-
-# --- LÓGICA DE RENDIMENTO ---
-def calcular_rendimento(valor, meses):
-    taxa = 0.0085 # 0.85% ao mês
-    v_final = valor * (1 + taxa) ** meses
-    return v_final, v_final - valor
 
 # --- INTERFACE DE CHAT ---
 st.title("🤖 FinnBot: Seu Assistente")
@@ -77,40 +72,33 @@ if prompt := st.chat_input("Pergunte qualquer coisa!"):
         
         # 1. Respostas Rápidas (Lógica Local)
         if "saldo" in p_lower:
-            resposta = f"Você tem R$ {st.session_state.saldo_conta:,.2f} na conta e R$ {st.session_state.saldo_cofrinho:,.2f} guardados."
-        
-        elif "render" in p_lower or "rendimento" in p_lower:
-            nums = [float(s) for s in p_lower.replace(",", ".").split() if s.replace(".", "").isdigit()]
-            if len(nums) >= 2:
-                vf, lucro = calcular_rendimento(nums[0], nums[1])
-                resposta = f"📈 Projeção: R$ {vf:,.2f} (Lucro de R$ {lucro:,.2f} em {nums[1]} meses)."
-            else:
-                resposta = "Informe o valor e os meses. Ex: 'Quanto rende 500 em 10 meses?'"
+            resposta = f"Você tem R$ {st.session_state.saldo_conta:,.2f} na conta e R$ {st.session_state.saldo_cofrinho:,.2f} no cofrinho."
         
         # 2. Inteligência Artificial (Gemini)
         else:
             with st.spinner("Pensando..."):
                 try:
-                    # Configura as instruções de personalidade
+                    # Instruções de personalidade e contexto de saldo
                     contexto = (
-                        f"Você é o FinnBot, um assistente financeiro amigável. "
-                        f"O usuário tem R$ {st.session_state.saldo_conta:.2f} disponível. "
-                        "Dê dicas curtas e úteis."
+                        f"Você é o FinnBot, um assistente de finanças. "
+                        f"O usuário tem R$ {st.session_state.saldo_conta:.2f} na conta. "
+                        "Responda de forma curta e amigável."
                     )
                     
-                    # Prepara o histórico para o formato do Gemini
+                    # Formatação da memória (histórico)
                     historico_ia = []
-                    for m in st.session_state.messages[-6:]:
+                    for m in st.session_state.messages[-5:]:
                         role_ia = "user" if m["role"] == "user" else "model"
                         historico_ia.append({"role": role_ia, "parts": [m["content"]]})
                     
-                    # Inicia o chat com a memória
+                    # Chamada do chat
                     chat_session = model.start_chat(history=historico_ia[:-1])
                     response = chat_session.send_message(f"{contexto}\n\nPergunta: {prompt}")
                     resposta = response.text
                 except Exception as e:
-                    st.error(f"Erro na IA: {e}")
-                    resposta = "Desculpe, tive um soluço técnico. Pode repetir?"
+                    # Exibe o erro técnico para você depurar, mas dá uma resposta amigável ao usuário
+                    st.error(f"Erro técnico: {e}")
+                    resposta = "Desculpe, tive um problema ao conectar com minha IA. Tente novamente!"
 
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
