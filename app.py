@@ -4,10 +4,9 @@ import google.generativeai as genai
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-pro') 
 except Exception as e:
-    st.error("Erro: Chave de API não configurada. Verifique os Secrets do Streamlit.")
-    st.stop()
+    st.error(f"Erro na configuração: {e}")
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="FinnBot AI", page_icon="🏦")
@@ -135,4 +134,5 @@ if prompt := st.chat_input("Pergunte sobre saldo, rendimento ou dicas financeira
 
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
+
 
