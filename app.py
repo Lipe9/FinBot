@@ -2,11 +2,11 @@ import streamlit as st
 import time
 
 # --- CONFIGURAÇÃO E ESTILO ---
-st.set_page_config(page_title="FinBot Cofrinho", page_icon="💰")
+st.set_page_config(page_title="FinnBot Cofrinho", page_icon="🏦")
 
 # --- INICIALIZAÇÃO DE DADOS (Persistência no Navegador) ---
 if 'saldo_conta' not in st.session_state:
-    st.session_state.saldo_conta = 4500.00
+    st.session_state.saldo_conta = 0.0
 if 'saldo_cofrinho' not in st.session_state:
     st.session_state.saldo_cofrinho = 0.0
 if 'messages' not in st.session_state:
@@ -72,3 +72,4 @@ if prompt := st.chat_input("Ex: 'Quanto vai render 1000 em 12 meses?'"):
 
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
+
