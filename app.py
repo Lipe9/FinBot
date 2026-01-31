@@ -50,7 +50,7 @@ with st.sidebar:
             st.rerun()
     
     with col_n2:
-        if st.button("🗑️ Limpar Tudo", use_container_width=True):
+        if st.button("🗑️ Limpar", use_container_width=True):
             st.session_state.historico_conversas = []
             st.session_state.messages = [{"role": "assistant", "content": "Histórico apagado. Vamos recomeçar?"}]
             st.rerun()
@@ -121,3 +121,4 @@ if prompt := st.chat_input("Diga algo..."):
 
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
+
