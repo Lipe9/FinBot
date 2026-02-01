@@ -14,7 +14,6 @@ def get_model():
         st.error("❌ Erro: Chave de API não encontrada nos Secrets do Streamlit.")
         st.stop()
 
-    # Lista de modelos para tentativa de conexão
     modelos_para_tentar = [
         'gemini-2.0-flash',      
         'gemini-1.5-flash',   
@@ -24,31 +23,29 @@ def get_model():
     for nome_modelo in modelos_para_tentar:
         try:
             model = genai.GenerativeModel(nome_modelo)
-            # Teste rápido para ver se o modelo responde
             return model, nome_modelo
         except Exception:
             continue
     
-    st.error("⚠️ Não consegui conectar em nenhum modelo. Verifique sua cota ou chave.")
+    st.error("⚠️ Não consegui conectar em nenhum modelo.")
     st.stop()
 
-# --- INICIALIZAÇÃO DE DADOS (SESSION STATE) ---
+# --- INICIALIZAÇÃO DE DADOS ---
 if 'saldo_conta' not in st.session_state:
     st.session_state.saldo_conta = 0.0
 if 'saldo_cofrinho' not in st.session_state:
     st.session_state.saldo_cofrinho = 0.0
 if 'messages' not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Olá! Sou seu FinnBot. Pergunte sobre suas finanças ou peça dicas de economia!"}
+        {"role": "assistant", "content": "Olá! Sou seu FinnBot. Como posso ajudar suas finanças?"}
     ]
 
-# --- TENTA CONECTAR AO MODELO ---
 model, nome_conectado = get_model()
 
-# --- BARRA LATERAL (OPCIONAL/ATIVADA) ---
+# --- BARRA LATERAL ---
 with st.sidebar:
     st.title("🏦 Meu Painel")
-    st.info(f"Modelo: {nome_conectado}")
+    st.info(f"Conectado: {nome_conectado}")
     
     st.metric("Saldo em Conta", f"R$ {st.session_state.saldo_conta:,.2f}")
     st.metric("No Cofrinho 🐷", f"R$ {st.session_state.saldo_cofrinho:,.2f}")
@@ -56,17 +53,15 @@ with st.sidebar:
     st.divider()
     
     st.subheader("Depositar")
-    valor_dep = st.number_input("Valor para depositar:", min_value=0.0, step=10.0, key="dep")
+    valor_dep = st.number_input("Valor:", min_value=0.0, step=10.0, key="dep")
     if st.button("Confirmar Depósito"):
         st.session_state.saldo_conta += valor_dep
-        st.success("Saldo atualizado!")
-        time.sleep(1)
         st.rerun()
 
     st.divider()
 
     st.subheader("Cofrinho")
-    valor_cofre = st.number_input("Valor da operação:", min_value=0.0, step=10.0, key="cof")
+    valor_cofre = st.number_input("Operação:", min_value=0.0, step=10.0, key="cof")
     c1, c2 = st.columns(2)
     with c1:
         if st.button("Guardar 📥"):
@@ -74,70 +69,47 @@ with st.sidebar:
                 st.session_state.saldo_conta -= valor_cofre
                 st.session_state.saldo_cofrinho += valor_cofre
                 st.rerun()
-            else:
-                st.error("Saldo insuficiente!")
     with c2:
         if st.button("Resgatar 📤"):
             if valor_cofre <= st.session_state.saldo_cofrinho:
                 st.session_state.saldo_cofrinho -= valor_cofre
                 st.session_state.saldo_conta += valor_cofre
                 st.rerun()
-            else:
-                st.error("Cofrinho vazio!")
 
-# --- CORPO PRINCIPAL (CHAT) ---
+# --- CHAT PRINCIPAL ---
 st.title("🤖 FinnBot: Assistente Financeiro")
 
-# Exibe o histórico de mensagens
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+# Container para as mensagens (para não sumirem)
+chat_placeholder = st.container()
 
-# Entrada do usuário
-if prompt := st.chat_input("Como posso ajudar suas finanças hoje?"):
-    # Adiciona mensagem do usuário ao histórico
+with chat_placeholder:
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
+
+# Entrada de texto
+if prompt := st.chat_input("Pergunte algo..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
+    with chat_placeholder.chat_message("user"):
         st.write(prompt)
 
-    # Gera resposta do Assistente
-    with st.chat_message("assistant"):
-        # Lógica Rápida Local (Saldo)
+    with chat_placeholder.chat_message("assistant"):
         if "saldo" in prompt.lower():
-            resposta = f"Seu saldo atual é:\n\n💰 **Conta:** R$ {st.session_state.saldo_conta:,.2f}\n🐷 **Cofrinho:** R$ {st.session_state.saldo_cofrinho:,.2f}"
-        
-        # Lógica IA
+            resposta = f"💰 Conta: R$ {st.session_state.saldo_conta:,.2f}\n🐷 Cofrinho: R$ {st.session_state.saldo_cofrinho:,.2f}"
         else:
-            with st.spinner("Pensando..."):
+            with st.spinner("Analisando..."):
                 try:
-                    instrucoes = (
-                        f"Você é o FinnBot, um assistente financeiro amigável. "
-                        f"O usuário tem R$ {st.session_state.saldo_conta:.2f} na conta e "
-                        f"R$ {st.session_state.saldo_cofrinho:.2f} guardados no cofrinho. "
-                        "Seja objetivo, use emojis e motive o usuário a economizar."
-                    )
-                    
-                    # Formata histórico para o padrão do Gemini
-                    history_gemini = []
-                    for m in st.session_state.messages[-6:]: # Pega as últimas 6 mensagens
-                        role = "model" if m["role"] == "assistant" else "user"
-                        history_gemini.append({"role": role, "parts": [m["content"]]})
-                    
-                    chat = model.start_chat(history=history_gemini[:-1])
-                    response = chat.send_message(f"{instrucoes}\n\nPergunta do usuário: {prompt}")
+                    instrucoes = f"Você é o FinnBot. Saldo conta: R$ {st.session_state.saldo_conta:.2f}. Saldo cofrinho: R$ {st.session_state.saldo_cofrinho:.2f}."
+                    history = [{"role": "model" if m["role"] == "assistant" else "user", "parts": [m["content"]]} for m in st.session_state.messages[-5:]]
+                    chat = model.start_chat(history=history[:-1])
+                    response = chat.send_message(f"{instrucoes}\n\nUsuário: {prompt}")
                     resposta = response.text
-                    
-                except Exception as e:
-                    # Fallback caso o chat com histórico falhe
-                    try:
-                        fallback_resp = model.generate_content(f"{instrucoes}\n\n{prompt}")
-                        resposta = fallback_resp.text
-                    except Exception as e2:
-                        resposta = "Ops, tive um probleminha técnico. Pode repetir?"
-        
+                except:
+                    resposta = "Pode repetir? Tive um soluço técnico."
+
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
 
 # --- RODAPÉ ---
-st.write("---")
+st.markdown("---")
 st.caption("Developed by Felipe Silva.")
