@@ -4,8 +4,6 @@ import google.generativeai as genai
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="FinnBot AI", page_icon="🏦", layout="centered")
-
-# --- CSS PARA FIXAR O RODAPÉ NO FINAL ---
 st.markdown("""
     <style>
     .footer {
@@ -20,7 +18,6 @@ st.markdown("""
         font-size: 12px;
         z-index: 100;
     }
-    /* Ajuste para a caixa de chat não cobrir o rodapé se necessário */
     .stChatInputContainer {
         bottom: 40px !important;
     }
@@ -141,3 +138,4 @@ if prompt := st.chat_input("Como posso ajudar suas finanças hoje?"):
 
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
+
