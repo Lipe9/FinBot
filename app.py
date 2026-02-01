@@ -101,7 +101,7 @@ if prompt := st.chat_input("Como posso ajudar suas finanças hoje?"):
         if "saldo" in prompt.lower():
             resposta = f"💰 Conta: R$ {st.session_state.saldo_conta:,.2f} | 🐷 Cofrinho: R$ {st.session_state.saldo_cofrinho:,.2f}"
         else:
-            with st.spinner(f"Processando com {nome_conectado}..."):
+            with st.spinner(f"Processando com Gemini..."):
                 try:
                     instrucoes = (
                         f"Você é o FinnBot. O usuário tem R$ {st.session_state.saldo_conta:.2f} disponível. "
@@ -120,5 +120,6 @@ if prompt := st.chat_input("Como posso ajudar suas finanças hoje?"):
 
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
+
 
 
