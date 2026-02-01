@@ -11,13 +11,14 @@ def get_model():
         api_key = st.secrets["GOOGLE_API_KEY"]
         genai.configure(api_key=api_key)
     except Exception:
-        st.error("❌ Erro: Chave de API não encontrada nos Secrets do Streamlit.")
+        st.error("❌ Erro: Chave de API não encontrada nos Secrets.")
         st.stop()
 
+    # PRIORIDADE: GEMINI 2.5 FLASH conforme solicitado
     modelos_para_tentar = [
+        'gemini-2.5-flash',      # O modelo que você usava antes
         'gemini-2.0-flash',      
-        'gemini-1.5-flash',   
-        'gemini-1.5-pro'
+        'gemini-1.5-flash'
     ]
 
     for nome_modelo in modelos_para_tentar:
@@ -45,7 +46,7 @@ model, nome_conectado = get_model()
 # --- BARRA LATERAL ---
 with st.sidebar:
     st.title("🏦 Meu Painel")
-    st.info(f"Conectado: {nome_conectado}")
+    st.success(f"⚡ Conectado: {nome_conectado}")
     
     st.metric("Saldo em Conta", f"R$ {st.session_state.saldo_conta:,.2f}")
     st.metric("No Cofrinho 🐷", f"R$ {st.session_state.saldo_cofrinho:,.2f}")
@@ -53,15 +54,14 @@ with st.sidebar:
     st.divider()
     
     st.subheader("Depositar")
-    valor_dep = st.number_input("Valor:", min_value=0.0, step=10.0, key="dep")
+    valor_dep = st.number_input("Valor:", min_value=0.0, step=100.0, key="dep")
     if st.button("Confirmar Depósito"):
         st.session_state.saldo_conta += valor_dep
         st.rerun()
 
     st.divider()
-
     st.subheader("Cofrinho")
-    valor_cofre = st.number_input("Operação:", min_value=0.0, step=10.0, key="cof")
+    valor_cofre = st.number_input("Operação cofrinho:", min_value=0.0, step=50.0, key="cof")
     c1, c2 = st.columns(2)
     with c1:
         if st.button("Guardar 📥"):
@@ -76,10 +76,10 @@ with st.sidebar:
                 st.session_state.saldo_conta += valor_cofre
                 st.rerun()
 
-# --- CHAT PRINCIPAL ---
+# --- CORPO PRINCIPAL ---
 st.title("🤖 FinnBot: Assistente Financeiro")
 
-# Container para as mensagens (para não sumirem)
+# Container para as mensagens
 chat_placeholder = st.container()
 
 with chat_placeholder:
@@ -87,29 +87,39 @@ with chat_placeholder:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-# Entrada de texto
-if prompt := st.chat_input("Pergunte algo..."):
+# Caixa de pergunta
+prompt = st.chat_input("Como posso ajudar suas finanças hoje?")
+
+if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with chat_placeholder.chat_message("user"):
         st.write(prompt)
 
     with chat_placeholder.chat_message("assistant"):
         if "saldo" in prompt.lower():
-            resposta = f"💰 Conta: R$ {st.session_state.saldo_conta:,.2f}\n🐷 Cofrinho: R$ {st.session_state.saldo_cofrinho:,.2f}"
+            resposta = f"💰 Conta: R$ {st.session_state.saldo_conta:,.2f} | 🐷 Cofrinho: R$ {st.session_state.saldo_cofrinho:,.2f}"
         else:
-            with st.spinner("Analisando..."):
+            with st.spinner(f"Processando com {nome_conectado}..."):
                 try:
-                    instrucoes = f"Você é o FinnBot. Saldo conta: R$ {st.session_state.saldo_conta:.2f}. Saldo cofrinho: R$ {st.session_state.saldo_cofrinho:.2f}."
-                    history = [{"role": "model" if m["role"] == "assistant" else "user", "parts": [m["content"]]} for m in st.session_state.messages[-5:]]
-                    chat = model.start_chat(history=history[:-1])
-                    response = chat.send_message(f"{instrucoes}\n\nUsuário: {prompt}")
+                    instrucoes = (
+                        f"Você é o FinnBot. O usuário tem R$ {st.session_state.saldo_conta:.2f} disponível. "
+                        "Responda de forma prática e motivadora."
+                    )
+                    history_gemini = []
+                    for m in st.session_state.messages[-4:]:
+                        role = "model" if m["role"] == "assistant" else "user"
+                        history_gemini.append({"role": role, "parts": [m["content"]]})
+                    
+                    chat = model.start_chat(history=history_gemini[:-1])
+                    response = chat.send_message(f"{instrucoes}\n\nPergunta: {prompt}")
                     resposta = response.text
-                except:
-                    resposta = "Pode repetir? Tive um soluço técnico."
+                except Exception as e:
+                    resposta = "Estou ajustando meus circuitos. Tente novamente."
 
         st.write(resposta)
         st.session_state.messages.append({"role": "assistant", "content": resposta})
 
 # --- RODAPÉ ---
-st.markdown("---")
+st.markdown("<br><br>", unsafe_allow_html=True) 
+st.divider()
 st.caption("Developed by Felipe Silva.")
